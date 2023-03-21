@@ -1,0 +1,39 @@
+const express = require("express");
+const app = express();
+const { open } = require("sqlite");
+const sqlite3 = require("sqlite3");
+const path = require("path");
+
+const dbPath = path.join(__dirname, "goodreads.db");
+let db = null;
+
+const initializeDbServer = async () => {
+  try {
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database,
+    });
+    app.listen(3000, () => {
+      console.log("Started running server at https://localhost/3000");
+    });
+  } catch (e) {
+    console.log(`DB Error : ${e.message}`);
+    process.exit(1);
+  }
+};
+initializeDbServer();
+
+//Get Books
+app.get("/books/", async (request, response) => {
+  const dbQuery = `SELECT * FROM book ORDER BY book_id`;
+  const bookDetails = await db.all(dbQuery);
+  response.send(bookDetails);
+});
+
+//Get book
+app.get("/books/:bookId/", async (request, response) => {
+  const { bookId } = request.params; //request.params provides the path parameters requested by the client.
+  const dbQuery = `SELECT * FROM book WHERE book_id = ${bookId}`;
+  const bookDetails = await db.get(dbQuery);
+  response.send(bookDetails);
+});
